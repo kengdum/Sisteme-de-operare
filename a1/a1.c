@@ -37,10 +37,13 @@ int list(int recursive, const char *string, const char *dirPath, int option) {
                         printf("%s\n", fullPath);
                     }
                 }
-                 if(recursive == 1) {
-                    if(S_ISDIR(statbuf.st_mode)) {
-                        list(recursive, string, fullPath, option);
+                else if(option == 2) {
+                    if((statbuf.st_mode & S_IWUSR) != 0) {
+                        printf("%s\n", fullPath);
                     }
+                }
+                if(recursive == 1) {
+                    list(recursive, string, fullPath, option);
                 }
 
             }
