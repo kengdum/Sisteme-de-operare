@@ -49,6 +49,7 @@ int list(int recursive, const char *string, const char *dirPath, int option) {
             }
         }
     }
+    closedir(dir);
     return 0;
 }
 
