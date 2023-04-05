@@ -224,8 +224,8 @@ int extract(const char* dirPath, int section, int line) {
            }
     }
     printf("%s\n", str);
+    close(fd);
     free(sectionBuffer);
-    free(str);
     return 0;
 }
 int main(int argc, char **argv) {
