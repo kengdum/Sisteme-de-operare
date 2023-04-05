@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
+#define BUFF_SIZE 512
+
 int checkFileName(const char *string, struct dirent *entry) {
     for(int i = 0; i < strlen(string); i++) {
         if(string[i] != entry->d_name[i]) {
@@ -15,6 +17,16 @@ int checkFileName(const char *string, struct dirent *entry) {
     }
     return 0;
 }
+char* createSectionName(int n) {
+    char* str = (char*)malloc(sizeof(char)*220);
+    strcpy(str, "section");
+    char int_string[20];
+    sprintf(int_string, "%d:", n);
+    strcat(str, int_string);
+    free(str);
+    return str;
+}
+
 int list(int recursive, const char *string, const char *dirPath, int option) {
     DIR *dir = NULL;
     struct dirent *entry = NULL;
@@ -52,7 +64,103 @@ int list(int recursive, const char *string, const char *dirPath, int option) {
     closedir(dir);
     return 0;
 }
+int parse(const char *dirPath) {
+    int fd;
+    ssize_t size = 0;
+    char buff[8];
+    char magic[3];
+    int types[6] = {95, 72, 70, 25, 22, 39};
+    //unsigned int headerSize;
+    unsigned int version;
+    unsigned int no_sections;
+    fd = open(dirPath, O_RDONLY);
 
+    if(fd == -1) {
+        perror("Nu s-a putut deschide acest fisier");
+        return -1;
+    }
+    size = read(fd, buff, 8);
+    if(size <= 0)
+        return -1;
+    else
+        buff[8] = '\0';
+    magic[0] = buff[0];
+    magic[1] = buff[1];
+    magic[2] = '\0';
+
+    if(strcmp(magic,"iA") != 0) {
+        printf("ERROR\nwrong magic");
+        return -1;
+    }
+    //headerSize = (unsigned char)buff[3] << 8 | (unsigned char)buff[2];
+    version = (unsigned char)buff[5] << 8 | (unsigned char)buff[4];
+    no_sections = (unsigned char)buff[6];
+    if(version < 109 || version > 184)
+        {
+            printf("ERROR\nwrong version");
+            return -1;
+        }
+    if(no_sections < 3 || no_sections > 20)
+        {   
+            printf("ERROR\nwrong sect_nr");
+            return -1;
+        }
+    lseek(fd, 22, SEEK_SET);
+    for(int i = 0; i < no_sections; i++) {
+        //verificare fiecare sect_type;
+        char *sect_type_string = (char*)malloc(2);
+        int verificare = 0;
+        size = read(fd, sect_type_string, 2);
+        int sect_type = (unsigned char)sect_type_string[1] << 8 | (unsigned char)sect_type_string[0];
+
+        for (int i = 0; i < 6; i ++) {
+            if(sect_type != types[i])  
+                    verificare ++;
+        }
+        if(verificare == 6)
+        {  
+            printf("ERROR\nwrong sect_types");
+            free(sect_type_string);
+            return -1;
+        }
+        lseek(fd, 23, SEEK_CUR);
+        free(sect_type_string);
+    }
+    lseek(fd, 7, SEEK_SET);
+    printf("SUCCESS\n");
+    printf("version=%d\n", version);
+    printf("nr_sections=%d\n", no_sections);
+    for(int i = 0; i < no_sections; i++) {
+
+        //data
+        char *data = (char*)malloc(15);
+        size = read(fd, data, 15);
+
+        //sect_type
+        char *sect_type_string = (char*)malloc(2);
+        size = read(fd, sect_type_string, 2);
+        int sect_type = (unsigned char)sect_type_string[1] << 8 | (unsigned char)sect_type_string[0];
+
+
+        //sect_size
+        lseek(fd, 4, SEEK_CUR);
+        char *sect_size_string = (char*)malloc(4);
+        size = read(fd, sect_size_string, 4);
+        int sect_size = ((unsigned char) sect_size_string[3] << 24 |
+            (unsigned char) sect_size_string[2] << 16 |
+            (unsigned char) sect_size_string[1] << 8 |
+            (unsigned char) sect_size_string[0]);
+
+        printf("%s %s %d %d\n", createSectionName(i+1), data, sect_type, sect_size);
+
+        free(sect_type_string);
+        free(sect_size_string);
+        free(data);
+
+    }
+    close(fd);
+    return 0;
+}
 int main(int argc, char **argv) {
     int recursive = 0;
     int option = 0;
@@ -76,7 +184,7 @@ int main(int argc, char **argv) {
                 else if(strstr(argv[i], "path=")) {
                     strcpy(path, argv[i] + 5);
                 }
-            }
+           }
             if(strcmp(path, "") != 0)
                 printf("SUCCESS\n");
             list(recursive, numeFisier, path, option);
@@ -84,6 +192,16 @@ int main(int argc, char **argv) {
         }
         if(strcmp(argv[1], "variant") == 0){
             printf("91802\n");
+        }
+        if(strcmp(argv[1], "parse") == 0) {
+            for(int i = 2; i < argc; i++) {
+                if(strstr(argv[i], "path=")) {
+                    strcpy(path, argv[i] + 5);
+                }
+            }
+            if(strcmp(path, "") != 0) {
+                    parse(path);
+            }
         }
     }
     return 0;
