@@ -163,10 +163,75 @@ int parse(const char *dirPath) {
     close(fd);
     return 0;
 }
+int extract(const char* dirPath, int section, int line) {
+    printf("SUCCESS\n");
+    int fd;
+    ssize_t size = 0;
+    char buff[8];
+    fd = open(dirPath, O_RDONLY);
+
+    if(fd == -1) {
+        perror("Nu s-a putut deschide acest fisier");
+        return -1;
+    }
+    size = read(fd, buff, 8);
+    if(size <= 0)
+        return -1;
+    else
+        buff[8] = '\0';
+    lseek(fd, 24, SEEK_SET);
+
+    int sect_offset = 0;
+    int sect_size = 0 ;
+    for(int i = 0; i < section; i++) {
+        //calculare offset
+        char *sect_offset_string = (char*)malloc(4);
+        size = read(fd, sect_offset_string, 4);
+        sect_offset = ((unsigned char) sect_offset_string[3] << 24 |
+            (unsigned char) sect_offset_string[2] << 16 |
+            (unsigned char) sect_offset_string[1] << 8 |
+            (unsigned char) sect_offset_string[0]);
+        //size
+        char *sect_size_string = (char*)malloc(4);
+        size = read(fd, sect_size_string, 4);
+        sect_size = ((unsigned char) sect_size_string[3] << 24 |
+            (unsigned char) sect_size_string[2] << 16 |
+            (unsigned char) sect_size_string[1] << 8 |
+            (unsigned char) sect_size_string[0]);
+
+        lseek(fd, 17, SEEK_CUR);
+        free(sect_offset_string);
+        free(sect_size_string);   
+    }
+    char* sectionBuffer = (char*)malloc(sect_size);
+    char* str;
+    lseek(fd, sect_offset, SEEK_SET);
+    read(fd, sectionBuffer, sect_size);
+    int contor = 0;
+    //printf("%s\n", sectionBuffer);
+    for(int i = strlen(sectionBuffer) - 1; i > 1; i --) {
+        if(sectionBuffer[i] == 10 && sectionBuffer[i-1] == 13)
+             contor ++; 
+    }
+    int linCur = 0;
+    for(int i = 0; i < strlen(sectionBuffer) -1; i ++){
+        if(sectionBuffer[i] == 13 && sectionBuffer[i+1] == 10)
+            linCur ++;
+        if(linCur == contor - line + 1)
+           {        
+                 str = strtok(sectionBuffer + i + 2, "\n");
+                 break;
+           }
+    }
+    printf("%s\n", str);
+    return 0;
+}
 int main(int argc, char **argv) {
     int recursive = 0;
     int option = 0;
     char path[512];
+    int section = 0;
+    int line = 0;
     char numeFisier[512];
     if(argc >= 2){
         if(strcmp(argv[1], "list") == 0) {
@@ -204,6 +269,24 @@ int main(int argc, char **argv) {
             if(strcmp(path, "") != 0) {
                     parse(path);
             }
+        }
+        if(strcmp(argv[1], "extract") == 0) {
+            for(int i = 2; i < argc; i++) {
+                if(strstr(argv[i], "path=")) {
+                    strcpy(path, argv[i] + 5);
+                    //printf("%s\n", path);
+                }
+                else if (strstr(argv[i], "section=")) {
+                    section = atoi(argv[i] + 8);
+                }
+                else if(strstr(argv[i],"line=")) {
+                    line = atoi(argv[i] + 5);
+                }
+            }
+            if(strcmp(path, "") != 0) {
+                    extract(path,section,line);
+                }
+
         }
     }
     return 0;
