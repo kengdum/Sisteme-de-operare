@@ -23,7 +23,6 @@ char* createSectionName(int n) {
     char int_string[20];
     sprintf(int_string, "%d:", n);
     strcat(str, int_string);
-    free(str);
     return str;
 }
 
@@ -151,8 +150,11 @@ int parse(const char *dirPath) {
             (unsigned char) sect_size_string[1] << 8 |
             (unsigned char) sect_size_string[0]);
 
-        printf("%s %s %d %d\n", createSectionName(i+1), data, sect_type, sect_size);
+        char *sectionName = createSectionName(i+1);
 
+        printf("%s %s %d %d\n", sectionName, data, sect_type, sect_size);
+
+        free(sectionName);
         free(sect_type_string);
         free(sect_size_string);
         free(data);
