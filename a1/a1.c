@@ -201,27 +201,35 @@ int extract(const char* dirPath, int section, int line) {
         free(sect_offset_string);
         free(sect_size_string);   
     }
-    char* sectionBuffer = (char*)malloc(sect_size);
+    char* sectionBuffer = (char*)malloc(sect_size + 1);
+    sectionBuffer[sect_size] = '\0';
     char* str;
     lseek(fd, sect_offset, SEEK_SET);
     read(fd, sectionBuffer, sect_size);
     int contor = 0;
-    //printf("%s\n", sectionBuffer);
+    int j = 0;
     for(int i = strlen(sectionBuffer) - 1; i > 1; i --) {
-        if(sectionBuffer[i] == 10 && sectionBuffer[i-1] == 13)
+        if(sectionBuffer[i] == '\n')
              contor ++; 
-    }
-    int linCur = 0;
-    for(int i = 0; i < strlen(sectionBuffer) -1; i ++){
-        if(sectionBuffer[i] == 13 && sectionBuffer[i+1] == 10)
-            linCur ++;
-        if(linCur == contor - line + 1)
-           {        
-                 str = strtok(sectionBuffer + i + 2, "\n");
-                 break;
-           }
+         if(contor == line )
+         {  //printf("%d\n", contor);
+            str = strtok(sectionBuffer + i,"\n");
+            break;
+         }
+         j ++;
     }
     printf("%s\n", str);
+    // int linCur = 0;
+    // for(int i = 0; i < strlen(sectionBuffer) -1; i ++){
+    //     if(sectionBuffer[i] == 13 && sectionBuffer[i+1] == 10)
+    //         linCur ++;
+    //     if(linCur == contor - line + 1)
+    //        {        
+    //              str = strtok(sectionBuffer + i + 2, "\n");
+    //              break;
+    //        }
+    // }
+    // printf("%s\n", str);
     close(fd);
     free(sectionBuffer);
     return 0;

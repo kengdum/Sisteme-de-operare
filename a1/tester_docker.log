@@ -55,10 +55,8 @@ Testing extract_7...[1;32mOK[0m
 Testing extract_8...[1;32mOK[0m
 Testing extract_9...[1;32mOK[0m
 Testing extract_10...[1;32mOK[0m
-Testing extract_11...[1;31mTIME LIMIT EXCEEDED[0m
-[1;31mFAIL[0m
-Testing extract_12...[1;31mTIME LIMIT EXCEEDED[0m
-[1;31mFAIL[0m
+Testing extract_11...[1;32mOK[0m
+Testing extract_12...[1;32mOK[0m
 Testing findall_1...[1;31mFAIL[0m
 Testing findall_2...[1;31mFAIL[0m
 Testing findall_3...[1;31mFAIL[0m
@@ -67,5 +65,5 @@ Testing findall_5...[1;31mFAIL[0m
 Testing findall_6...[1;31mFAIL[0m
 Testing findall_7...[1;31mFAIL[0m
 Testing findall_8...[1;31mFAIL[0m
-Total score: 55 / 65
-Assignment grade: 84.62 / 100
+Total score: 57 / 65
+Assignment grade: 87.69 / 100
