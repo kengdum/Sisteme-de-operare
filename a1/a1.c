@@ -7,8 +7,6 @@
 #include <stdlib.h>
 #include <fcntl.h>
 
-#define BUFF_SIZE 512
-
 int checkFileName(const char *string, struct dirent *entry) {
     for(int i = 0; i < strlen(string); i++) {
         if(string[i] != entry->d_name[i]) {
@@ -82,7 +80,7 @@ int parse(const char *dirPath) {
     if(size <= 0)
         return -1;
     else
-        buff[8] = '\0';
+        buff[7] = '\0';
     magic[0] = buff[0];
     magic[1] = buff[1];
     magic[2] = '\0';
@@ -178,7 +176,7 @@ int extract(const char* dirPath, int section, int line) {
     if(size <= 0)
         return -1;
     else
-        buff[8] = '\0';
+        buff[7] = '\0';
     lseek(fd, 24, SEEK_SET);
 
     int sect_offset = 0;
@@ -232,6 +230,8 @@ int main(int argc, char **argv) {
     int recursive = 0;
     int option = 0;
     char path[512];
+    char path1[512];
+    char path2[512];
     int section = 0;
     int line = 0;
     char numeFisier[512];
@@ -265,17 +265,17 @@ int main(int argc, char **argv) {
         if(strcmp(argv[1], "parse") == 0) {
             for(int i = 2; i < argc; i++) {
                 if(strstr(argv[i], "path=")) {
-                    strcpy(path, argv[i] + 5);
+                    strcpy(path1, argv[i] + 5);
                 }
             }
             if(strcmp(path, "") != 0) {
-                    parse(path);
+                    parse(path1);
             }
         }
         if(strcmp(argv[1], "extract") == 0) {
             for(int i = 2; i < argc; i++) {
                 if(strstr(argv[i], "path=")) {
-                    strcpy(path, argv[i] + 5);
+                    strcpy(path2, argv[i] + 5);
                     //printf("%s\n", path);
                 }
                 else if (strstr(argv[i], "section=")) {
@@ -286,7 +286,7 @@ int main(int argc, char **argv) {
                 }
             }
             if(strcmp(path, "") != 0) {
-                    extract(path,section,line);
+                    extract(path2,section,line);
                 }
 
         }
