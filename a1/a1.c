@@ -173,8 +173,10 @@ int extract(const char* dirPath, int section, int line) {
         return -1;
     }
     size = read(fd, buff, 8);
-    if(size <= 0)
+    if(size <= 0){
+        close(fd);
         return -1;
+    }
     else
         buff[7] = '\0';
     lseek(fd, 24, SEEK_SET);
@@ -207,7 +209,6 @@ int extract(const char* dirPath, int section, int line) {
     lseek(fd, sect_offset, SEEK_SET);
     read(fd, sectionBuffer, sect_size);
     int contor = 0;
-    int j = 0;
     for(int i = strlen(sectionBuffer) - 1; i > 1; i --) {
         if(sectionBuffer[i] == '\n')
              contor ++; 
@@ -216,22 +217,91 @@ int extract(const char* dirPath, int section, int line) {
             str = strtok(sectionBuffer + i,"\n");
             break;
          }
-         j ++;
     }
     printf("%s\n", str);
-    // int linCur = 0;
-    // for(int i = 0; i < strlen(sectionBuffer) -1; i ++){
-    //     if(sectionBuffer[i] == 13 && sectionBuffer[i+1] == 10)
-    //         linCur ++;
-    //     if(linCur == contor - line + 1)
-    //        {        
-    //              str = strtok(sectionBuffer + i + 2, "\n");
-    //              break;
-    //        }
-    // }
-    // printf("%s\n", str);
     close(fd);
     free(sectionBuffer);
+    return 0;
+}
+int findall(const char* dirPath) {
+    DIR *dir = NULL;
+    struct dirent *entry = NULL;
+    char fullPath[512];
+    struct stat statbuf;
+    dir = opendir(dirPath);
+    if(dir == NULL) {
+        return -1;
+    }
+    while((entry = readdir(dir)) != NULL) {
+            if(strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
+            snprintf(fullPath, 512, "%s/%s", dirPath, entry->d_name);
+            if(lstat(fullPath, &statbuf) == 0) {
+                if(S_ISDIR(statbuf.st_mode)) {
+                    findall(fullPath);
+                }
+                else if(S_ISREG(statbuf.st_mode)) {
+                   //printf("%s\n", fullPath);
+                   int fd = -1;
+                   int sect_offset = 0;
+                   int sect_size = 0;
+                   int no_sections = 0;
+                   fd = open(fullPath, O_RDONLY);
+                   lseek(fd, 6, SEEK_SET);
+                   read(fd, &no_sections, 1);
+                   //printf("%d\n", no_sections);
+                   int *offsets = (int*)malloc(sizeof(int) * no_sections);
+                   int *sizes = (int*)malloc(sizeof(int) * no_sections);
+                   if(offsets == NULL || sizes == NULL)
+                        return -1;
+                   lseek(fd, 17, SEEK_CUR);
+                   for(int i = 0; i < no_sections; i++) {
+                       char *sect_offset_string = (char*)malloc(4);
+                       read(fd, sect_offset_string, 4);
+                       sect_offset = ((unsigned char) sect_offset_string[3] << 24 |
+                        (unsigned char) sect_offset_string[2] << 16 |
+                        (unsigned char) sect_offset_string[1] << 8 |
+                        (unsigned char) sect_offset_string[0]);
+                       char *sect_size_string = (char*)malloc(4);
+                       read(fd, sect_size_string, 4);
+                       sect_size = ((unsigned char) sect_size_string[3] << 24 |
+                        (unsigned char) sect_size_string[2] << 16 |
+                        (unsigned char) sect_size_string[1] << 8 |
+                        (unsigned char) sect_size_string[0]);
+                       //printf("%d %d\n", sect_offset, sect_size);
+                       offsets[i] = sect_offset;
+                       sizes[i] = sect_size;    
+                       //printf("%d %d\n", offsets[i], sizes[i]);
+                       free(sect_size_string);
+                       free(sect_offset_string);
+                       lseek(fd, 17, SEEK_CUR);
+                    }
+                    int Osectiune = 0;
+                    for(int i = 0; i < no_sections; i++) {
+                         char* sectionBuffer = (char*)malloc(sizes[i] + 1);
+                         sectionBuffer[sizes[i]] = '\0';
+                         lseek(fd, offsets[i], SEEK_SET);
+                         read(fd, sectionBuffer, sizes[i]);
+                         int contor = 0;
+                         for(int i = 0; i < strlen(sectionBuffer) - 1; i ++) {
+                            if(sectionBuffer[i] == 13 && sectionBuffer[i+1] == 10)
+                                contor ++;
+                         }
+                         if (contor == 15)
+                            Osectiune ++;
+                         free(sectionBuffer);
+                         //printf("%d\n", contor);
+                    }
+                    if(Osectiune >= 1)
+                        printf("%s\n", fullPath);
+                    //printf("%s %d\n\n", fullPath, Osectiune);
+                    free(sizes);
+                    free(offsets);
+                    close(fd);
+                }
+            }
+        }
+    }
+    closedir(dir);
     return 0;
 }
 int main(int argc, char **argv) {
@@ -240,6 +310,7 @@ int main(int argc, char **argv) {
     char path[512];
     char path1[512];
     char path2[512];
+    char path3[512];
     int section = 0;
     int line = 0;
     char numeFisier[512];
@@ -297,6 +368,16 @@ int main(int argc, char **argv) {
                     extract(path2,section,line);
                 }
 
+        }
+        if(strcmp(argv[1], "findall") == 0) {
+            for(int i = 2; i < argc; i++) {
+                if(strstr(argv[i], "path=")) {
+                    strcpy(path3, argv[i] + 5);
+                    //printf("%s\n", path3);
+                }
+            }
+            printf("SUCCESS\n");
+            findall(path3);        
         }
     }
     return 0;
