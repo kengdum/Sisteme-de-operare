@@ -182,7 +182,10 @@ int extract(const char* dirPath, int section, int line) {
         buff[7] = '\0';
     no_sections = buff[6];
     if(section > no_sections)
-        return -1;
+       {
+          close(fd);
+          return -1;
+       }
     lseek(fd, 24, SEEK_SET);
 
     int sect_offset = 0;
