@@ -283,17 +283,19 @@ int findall(const char* dirPath) {
                          read(fd, sectionBuffer, sizes[i]);
                          int contor = 0;
                          for(int i = 0; i < strlen(sectionBuffer) - 1; i ++) {
-                            if(sectionBuffer[i] == 13 && sectionBuffer[i+1] == 10)
-                                contor ++;
+                            if(sectionBuffer[i] == '\n')
+                                    contor ++;
+                            // if(contor > 15)
+                            //     break;
                          }
-                         if (contor == 15)
+                         if (contor + 1 == 15)
                             Osectiune ++;
                          free(sectionBuffer);
                          //printf("%d\n", contor);
                     }
                     if(Osectiune >= 1)
                         printf("%s\n", fullPath);
-                    //printf("%s %d\n\n", fullPath, Osectiune);
+                    //printf("%s\n", fullPath);
                     free(sizes);
                     free(offsets);
                     close(fd);
