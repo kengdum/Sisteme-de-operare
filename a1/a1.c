@@ -165,6 +165,7 @@ int extract(const char* dirPath, int section, int line) {
     printf("SUCCESS\n");
     int fd;
     ssize_t size = 0;
+    int no_sections;
     char buff[8];
     fd = open(dirPath, O_RDONLY);
 
@@ -179,6 +180,9 @@ int extract(const char* dirPath, int section, int line) {
     }
     else
         buff[7] = '\0';
+    no_sections = buff[6];
+    if(section > no_sections)
+        return -1;
     lseek(fd, 24, SEEK_SET);
 
     int sect_offset = 0;
@@ -285,8 +289,8 @@ int findall(const char* dirPath) {
                          for(int i = 0; i < strlen(sectionBuffer) - 1; i ++) {
                             if(sectionBuffer[i] == '\n')
                                     contor ++;
-                            // if(contor > 15)
-                            //     break;
+                            if(contor > 15)
+                                break;
                          }
                          if (contor + 1 == 15)
                             Osectiune ++;
@@ -295,7 +299,6 @@ int findall(const char* dirPath) {
                     }
                     if(Osectiune >= 1)
                         printf("%s\n", fullPath);
-                    //printf("%s\n", fullPath);
                     free(sizes);
                     free(offsets);
                     close(fd);
