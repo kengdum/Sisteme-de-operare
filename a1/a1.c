@@ -181,35 +181,32 @@ int extract(const char* dirPath, int section, int line) {
     else
         buff[7] = '\0';
     no_sections = buff[6];
-    if(section > no_sections)
+    if(section > no_sections ||  no_sections == 0)
        {
           close(fd);
           return -1;
        }
-    lseek(fd, 24, SEEK_SET);
+    lseek(fd, 7, SEEK_SET);
 
     int sect_offset = 0;
     int sect_size = 0 ;
-    for(int i = 0; i < section; i++) {
-        //calculare offset
-        char *sect_offset_string = (char*)malloc(4);
-        size = read(fd, sect_offset_string, 4);
-        sect_offset = ((unsigned char) sect_offset_string[3] << 24 |
-            (unsigned char) sect_offset_string[2] << 16 |
-            (unsigned char) sect_offset_string[1] << 8 |
-            (unsigned char) sect_offset_string[0]);
-        //size
-        char *sect_size_string = (char*)malloc(4);
-        size = read(fd, sect_size_string, 4);
-        sect_size = ((unsigned char) sect_size_string[3] << 24 |
-            (unsigned char) sect_size_string[2] << 16 |
-            (unsigned char) sect_size_string[1] << 8 |
-            (unsigned char) sect_size_string[0]);
-
-        lseek(fd, 17, SEEK_CUR);
-        free(sect_offset_string);
-        free(sect_size_string);   
-    }
+    char *sect_offset_string = (char*)malloc(4);
+    char *sect_size_string = (char*)malloc(4);
+    lseek(fd, (25*(section-1))+17, SEEK_CUR);
+    size = read(fd, sect_offset_string, 4);
+    sect_offset = ((unsigned char) sect_offset_string[3] << 24 |
+        (unsigned char) sect_offset_string[2] << 16 |
+        (unsigned char) sect_offset_string[1] << 8 |
+        (unsigned char) sect_offset_string[0]);
+       
+    size = read(fd, sect_size_string, 4);
+    sect_size = ((unsigned char) sect_size_string[3] << 24 |
+        (unsigned char) sect_size_string[2] << 16 |
+        (unsigned char) sect_size_string[1] << 8 |
+        (unsigned char) sect_size_string[0]);
+    //printf("%d %d\n", sect_size, sect_offset);
+    free(sect_offset_string);
+    free(sect_size_string);   
     char* sectionBuffer = (char*)malloc(sect_size + 1);
     sectionBuffer[sect_size] = '\0';
     char* str;
