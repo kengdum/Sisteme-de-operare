@@ -5,12 +5,42 @@
 #include <pthread.h>
 #include "a2_helper.h"
 
+pthread_cond_t cond1 = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
+
+pthread_cond_t cond4 = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutex4 = PTHREAD_MUTEX_INITIALIZER;
+ 
+
 void* threadFunction(void* arg) {
     int threadNumber = *(int*) arg;
-    info(BEGIN, 7, threadNumber);
-    info(END, 7, threadNumber);
+    pthread_mutex_lock(&mutex1);
+    if(threadNumber == 1) {
+        pthread_cond_wait(&cond1, &mutex1);
+        info(BEGIN, 7, threadNumber);
+    } else {
+        info(BEGIN, 7, threadNumber);
+        if(threadNumber == 4){
+            pthread_cond_signal(&cond1);
+        }
+    }
+
+    pthread_mutex_unlock(&mutex1);
+    pthread_mutex_lock(&mutex4);
+
+    if(threadNumber == 4) {
+        pthread_cond_wait(&cond4, &mutex4);
+        info(END, 7, threadNumber);
+    } else {
+        info(END, 7, threadNumber);
+        if(threadNumber == 1){
+            pthread_cond_signal(&cond4);
+        }
+    }
+    pthread_mutex_unlock(&mutex4);
     return NULL;
 }
+
 
 int main() {
     init();
@@ -34,6 +64,7 @@ int main() {
             for (int i = 0; i < 5; i++){
                 pthread_create(&threads[i], NULL, threadFunction, &threadNumbers[i]);
             }
+           
             for (int i = 0; i < 5; i++) {
                 pthread_join(threads[i], NULL);
             }
@@ -83,6 +114,10 @@ int main() {
     wait(&status);
 
     info(END, 1, 0);
+    pthread_mutex_destroy(&mutex1);
+    pthread_mutex_destroy(&mutex4);
+    pthread_cond_destroy(&cond1);
+    pthread_cond_destroy(&cond4);
     return 0;
 }
 
