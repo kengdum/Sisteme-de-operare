@@ -4,12 +4,22 @@
 #include <sys/wait.h>
 #include <pthread.h>
 #include "a2_helper.h"
+#include <semaphore.h>
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutex5 = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond5 = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t mutex6 = PTHREAD_MUTEX_INITIALIZER;
+
+sem_t semafor;
 
 int started4 = 0;
 int started1 = 0;
+int contor = 0;
+int started11 = 0;
+int pornit72 = 0;
+int terminat72 = 0;
 
 void* threadFunction(void* arg) {
     int threadNumber = *(int*) arg;
@@ -38,6 +48,48 @@ void* threadFunction(void* arg) {
         }
     }
     pthread_mutex_unlock(&mutex);
+    return NULL;
+}
+void* threadFunction5(void *arg) {
+    int threadNumber = *(int *) arg;
+    sem_wait(&semafor);
+    info(BEGIN, 5, threadNumber);
+    pthread_mutex_lock(&mutex5);
+    contor ++;
+    if(threadNumber == 11)
+         started11 = 1;
+    if(contor <= 33 && threadNumber != 11) {
+        //printf("%d %d\n", contor, threadNumber);
+        info(END, 5, threadNumber);
+        pthread_mutex_unlock(&mutex5);
+    }
+    else {
+        if( (contor == 38 && started11 == 1) || contor == 39) {
+           pthread_mutex_unlock(&mutex5);
+            pthread_cond_broadcast(&cond5);
+        }
+        else {
+            pthread_cond_wait(&cond5, &mutex5);
+            pthread_mutex_unlock(&mutex5);
+        }
+        info(END, 5, threadNumber);
+    }
+    sem_post(&semafor);
+    return NULL;
+}
+void* threadFunction6(void *arg) {
+
+    // logica 7.2 trebuie sa astepte ca 6.3 sa se incheie dupa care, 6.2 incepe abia dupa ce 7.2 s-a termiant
+    int threadNumber = *(int *) arg;
+    info(BEGIN, 6, threadNumber);
+    if(threadNumber == 3){
+        pthread_mutex_lock(&mutex6);
+        pornit72 = 1;
+        info(END, 6, threadNumber);
+        pthread_mutex_unlock(&mutex6);
+        return NULL;
+    }
+    info(END, 6, threadNumber);
     return NULL;
 }
 
@@ -81,6 +133,16 @@ int main() {
             pid5 = fork();
             if (pid5 == 0) {
                 info(BEGIN, 5, 0);
+                pthread_t threads5[39];
+                sem_init(&semafor, 5, 6);
+                int threadNumbers5[39];
+                for (int i = 0; i < 39; i++){
+                    threadNumbers5[i] = i + 1;
+                    pthread_create(&threads5[i], NULL, threadFunction5, &threadNumbers5[i]);
+                }
+                for (int i = 0; i < 39; i++) {
+                    pthread_join(threads5[i], NULL);
+                }
                 info(END, 5, 0);
                 return 0;
             }
@@ -99,6 +161,15 @@ int main() {
             pid6 = fork();
         if (pid6 == 0) {
             info(BEGIN, 6, 0);
+            pthread_t threads6[5];
+            int threadNumbers6[5] = {1, 2, 3, 4, 5};
+            for (int i = 0; i < 5; i++){
+                pthread_create(&threads6[i], NULL, threadFunction6, &threadNumbers6[i]);
+            }
+
+            for (int i = 0; i < 5; i++) {
+                pthread_join(threads6[i], NULL);
+            }
             info(END, 6, 0);
             return 0;
         }
@@ -113,8 +184,13 @@ int main() {
     wait(&status);
 
     info(END, 1, 0);
+
     pthread_mutex_destroy(&mutex);
     pthread_cond_destroy(&cond);
+    pthread_cond_destroy(&cond5);
+    pthread_mutex_destroy(&mutex5);
+    pthread_mutex_destroy(&mutex6);
+
     return 0;
 }
 
