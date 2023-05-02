@@ -8,25 +8,32 @@
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
+int started4 = 0;
+int started1 = 0;
+
 void* threadFunction(void* arg) {
     int threadNumber = *(int*) arg;
     pthread_mutex_lock(&mutex);
     if(threadNumber == 1) {
-        pthread_cond_wait(&cond, &mutex);
+        if(started4 == 0)
+            pthread_cond_wait(&cond, &mutex);
         info(BEGIN, 7, threadNumber);
     } else {
         info(BEGIN, 7, threadNumber);
         if(threadNumber == 4){
+            started4 = 1;
             pthread_cond_signal(&cond);
         }
     }
 
     if(threadNumber == 4) {
-        pthread_cond_wait(&cond, &mutex);
+        if(started1 == 0) 
+             pthread_cond_wait(&cond, &mutex);
         info(END, 7, threadNumber);
     } else {
         info(END, 7, threadNumber);
         if(threadNumber == 1){
+            started1 = 1;
             pthread_cond_signal(&cond);
         }
     }
