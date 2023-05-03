@@ -5,6 +5,11 @@
 #include <pthread.h>
 #include "a2_helper.h"
 #include <semaphore.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
@@ -13,6 +18,9 @@ pthread_cond_t cond5 = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t mutex6 = PTHREAD_MUTEX_INITIALIZER;
 
 sem_t semafor;
+sem_t *semafor63;
+sem_t *semafor72;
+sem_t *semafor62;
 
 int started4 = 0;
 int started1 = 0;
@@ -20,9 +28,13 @@ int contor = 0;
 int started11 = 0;
 int pornit72 = 0;
 int terminat72 = 0;
+int terminat63 = 0;
 
 void* threadFunction(void* arg) {
     int threadNumber = *(int*) arg;
+    if(threadNumber == 2) {
+        sem_wait(semafor72);
+    }
     pthread_mutex_lock(&mutex);
     if(threadNumber == 1) {
         if(started4 == 0)
@@ -42,6 +54,9 @@ void* threadFunction(void* arg) {
         info(END, 7, threadNumber);
     } else {
         info(END, 7, threadNumber);
+        if(threadNumber == 2) {
+            sem_post(semafor62);
+        }
         if(threadNumber == 1){
             started1 = 1;
             pthread_cond_signal(&cond);
@@ -65,13 +80,14 @@ void* threadFunction5(void *arg) {
     }
     else {
         if( (contor == 38 && started11 == 1) || contor == 39) {
-           pthread_mutex_unlock(&mutex5);
+            pthread_mutex_unlock(&mutex5);
             pthread_cond_broadcast(&cond5);
         }
         else {
             pthread_cond_wait(&cond5, &mutex5);
             pthread_mutex_unlock(&mutex5);
         }
+        //printf("%d %d\n", threadNumber, contor);
         info(END, 5, threadNumber);
     }
     sem_post(&semafor);
@@ -79,24 +95,33 @@ void* threadFunction5(void *arg) {
 }
 void* threadFunction6(void *arg) {
 
-    // logica 7.2 trebuie sa astepte ca 6.3 sa se incheie dupa care, 6.2 incepe abia dupa ce 7.2 s-a termiant
     int threadNumber = *(int *) arg;
-    info(BEGIN, 6, threadNumber);
-    if(threadNumber == 3){
-        pthread_mutex_lock(&mutex6);
-        pornit72 = 1;
-        info(END, 6, threadNumber);
-        pthread_mutex_unlock(&mutex6);
-        return NULL;
+
+    if (threadNumber == 3) {
+        sem_wait(semafor63);
     }
+    if(threadNumber == 2) {
+        sem_wait(semafor62);
+    }
+    info(BEGIN, 6, threadNumber);
     info(END, 6, threadNumber);
+    if (threadNumber == 3) {
+        sem_post(semafor72);
+    }
+
+
     return NULL;
 }
 
 int main() {
     init();
     info(BEGIN, 1, 0);
-
+    sem_unlink("/semafor63");
+    semafor63 = sem_open("/semafor63", O_CREAT, 0644, 1);
+    sem_unlink("/semafor72");
+    semafor72 = sem_open("/semafor72", O_CREAT, 0644, 0);
+    sem_unlink("/semafor62");
+    semafor62 = sem_open("/semafor62", O_CREAT, 0644, 0);
     pid_t pid2, pid3, pid4, pid5, pid6, pid7;
     int status;
 
@@ -193,4 +218,3 @@ int main() {
 
     return 0;
 }
-
