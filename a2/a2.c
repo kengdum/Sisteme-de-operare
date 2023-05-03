@@ -29,6 +29,7 @@ int started11 = 0;
 int pornit72 = 0;
 int terminat72 = 0;
 int terminat63 = 0;
+int thhreaduriCareRuleaza = 0;
 
 void* threadFunction(void* arg) {
     int threadNumber = *(int*) arg;
@@ -73,21 +74,22 @@ void* threadFunction5(void *arg) {
     contor ++;
     if(threadNumber == 11)
          started11 = 1;
-    if(contor <= 33 && threadNumber != 11) {
+    if(contor <= 34 && threadNumber != 11) {
         //printf("%d %d\n", contor, threadNumber);
         info(END, 5, threadNumber);
         pthread_mutex_unlock(&mutex5);
     }
     else {
-        if( (contor == 38 && started11 == 1) || contor == 39) {
+        thhreaduriCareRuleaza ++;
+        if((thhreaduriCareRuleaza == 6 && started11 == 1) || contor == 39){
             pthread_mutex_unlock(&mutex5);
             pthread_cond_broadcast(&cond5);
         }
         else {
+            //printf("%d %d %d\n", threadNumber, contor, thhreaduriCareRuleaza);
             pthread_cond_wait(&cond5, &mutex5);
             pthread_mutex_unlock(&mutex5);
         }
-        //printf("%d %d\n", threadNumber, contor);
         info(END, 5, threadNumber);
     }
     sem_post(&semafor);
