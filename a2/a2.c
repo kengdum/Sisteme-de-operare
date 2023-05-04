@@ -16,6 +16,7 @@ pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t mutex5 = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond5 = PTHREAD_COND_INITIALIZER;
 pthread_mutex_t mutex6 = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond11 = PTHREAD_COND_INITIALIZER;
 
 sem_t semafor;
 sem_t *semafor63;
@@ -30,6 +31,8 @@ int pornit72 = 0;
 int terminat72 = 0;
 int terminat63 = 0;
 int thhreaduriCareRuleaza = 0;
+int sePoateTermina = 0;
+int baAstaTreSafie1 = 0;
 
 void* threadFunction(void* arg) {
     int threadNumber = *(int*) arg;
@@ -73,29 +76,44 @@ void* threadFunction5(void *arg) {
     pthread_mutex_lock(&mutex5);
     contor ++;
     if(threadNumber == 11)
-         started11 = 1;
-    if(contor <= 34 && threadNumber != 11) {
-        //printf("%d %d\n", contor, threadNumber);
-        info(END, 5, threadNumber);
-        pthread_mutex_unlock(&mutex5);
+    {   
+        started11 = 1;
+        if(contor <= 33)
+            contor --;
     }
-    else {
+    pthread_mutex_unlock(&mutex5);
+    if(contor <= 33 && threadNumber != 11) {
+        info(END, 5, threadNumber);
+    }
+    else if (threadNumber != 11) {
+        pthread_mutex_lock(&mutex5);
         thhreaduriCareRuleaza ++;
-        if((thhreaduriCareRuleaza == 6 && started11 == 1) || contor == 39){
-            pthread_mutex_unlock(&mutex5);
-            pthread_cond_broadcast(&cond5);
+        //printf("%d %d %d\n", thhreaduriCareRuleaza, contor, threadNumber);
+         if(thhreaduriCareRuleaza == 5) {
+            sePoateTermina = 1;
+            pthread_cond_signal(&cond11);
         }
-        else {
-            //printf("%d %d %d\n", threadNumber, contor, thhreaduriCareRuleaza);
-            pthread_cond_wait(&cond5, &mutex5);
-            pthread_mutex_unlock(&mutex5);
+        pthread_cond_wait(&cond5, &mutex5);
+        //se asteapta ca 11 sa le trezeasca
+
+
+        pthread_mutex_unlock(&mutex5);
+        info(END, 5, threadNumber);
+    }
+    if(threadNumber == 11)  {
+        pthread_mutex_lock(&mutex5);
+        if(sePoateTermina == 0) {
+            pthread_cond_wait(&cond11, &mutex5);
         }
         info(END, 5, threadNumber);
+        pthread_cond_broadcast(&cond5);
+        pthread_mutex_unlock(&mutex5);
+  
     }
     sem_post(&semafor);
     return NULL;
 }
-void* threadFunction6(void *arg) {
+void* threadFunction6(void *arg) { 
 
     int threadNumber = *(int *) arg;
 
@@ -215,6 +233,7 @@ int main() {
     pthread_mutex_destroy(&mutex);
     pthread_cond_destroy(&cond);
     pthread_cond_destroy(&cond5);
+    pthread_cond_destroy(&cond11);
     pthread_mutex_destroy(&mutex5);
     pthread_mutex_destroy(&mutex6);
 
